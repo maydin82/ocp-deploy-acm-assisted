@@ -1,0 +1,21 @@
+---
+- name: Download ISO from URL
+  get_url:
+    url: "{{ iso_location  }}"  # URL to the ISO file
+    dest: /tmp/{{ cluster }}.iso
+    timeout: 360
+    validate_certs: false
+    force: true
+
+- name: Upload ISO to VMware Datastore
+  vsphere_copy:
+    hostname: "{{ vcenter_server }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    datastore: "{{ datastore_name }}"
+    datacenter: "{{ datacenter_name }}"
+    validate_certs: no  # Set to 'yes' if you want to validate SSL certificates.
+    src: /tmp/{{ cluster }}.iso
+    path: "iso/{{ cluster }}.iso"  # Specify your datastore and folder
+
+

@@ -1,0 +1,46 @@
+    - name: Log in OCP (obtain access token)
+      community.okd.openshift_auth:
+        host: "{{ acm_api_url }}"
+        validate_certs: no
+        username: "{{ acm_user }}"
+        password: "{{ acm_password }}"
+      register: openshift_auth_results
+
+
+    - name: Get  existing agents
+      k8s_info:
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
+        host: "{{ acm_api_url }}"
+        validate_certs: no
+        api_version: agent-install.openshift.io/v1beta1
+        kind: Agent
+        namespace: "{{ namespace }}"
+      register: all_agents
+      until: all_agents.resources | length == ocpnodes | length
+      retries: 180
+      delay: 10
+
+
+    - name: Get custom resource object names
+      set_fact:
+        custom_resource_names: "{{ all_agents.resources | map(attribute='metadata.name') | list }}"
+
+        
+    - name: Update custom resource objects
+      k8s:
+        state: present
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
+        host: "{{ acm_api_url }}"
+        validate_certs: no
+        definition: |
+          apiVersion: agent-install.openshift.io/v1beta1
+          kind: Agent
+          metadata:
+            namespace: "{{ namespace }}"
+            name: "{{ item }}"
+          spec:
+            approved: true
+      with_items: "{{ custom_resource_names }}"
+
+
+

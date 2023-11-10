@@ -1,0 +1,21 @@
+apiVersion: agent-install.openshift.io/v1beta1
+kind: InfraEnv
+metadata:
+  labels:
+    cluster-name: {{ .Values.clusterName }}
+  name: {{ .Values.clusterName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  clusterRef:
+    name: {{ .Values.clusterName }}
+    namespace: {{ .Values.namespace }}
+  agentLabels:
+    cluster-name: {{ .Values.clusterName }}
+  cpuArchitecture: {{ .Values.cpuArchitecture | default "x86_64" }}
+  nmStateConfigLabelSelector:
+    matchLabels:
+      cluster-name: {{ .Values.clusterName }}
+  pullSecretRef:
+    name: {{ .Values.pullSecretName | default (printf "pull-secret-%s" .Values.clusterName) }}
+  sshAuthorizedKey: {{ .Values.sshPublicKey }}
+

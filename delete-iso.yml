@@ -1,0 +1,14 @@
+---
+
+
+- name: Delete ISO from VMware Datastore
+  vsphere_file:
+    hostname: "{{ vcenter_server }}"
+    username: "{{ vcenter_username }}"
+    password: "{{ vcenter_password }}"
+    datastore: "{{ datastore_name }}"
+    datacenter: "{{ datacenter_name }}"
+    validate_certs: no  # Set to 'yes' if you want to validate SSL certificates.
+    path: "iso/{{ cluster }}.iso"  # Specify your datastore and folder
+    state: absent
+  ignore_errors: true

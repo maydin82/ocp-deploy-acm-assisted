@@ -1,0 +1,97 @@
+- name: Attach ISO to VMware VM
+  hosts: localhost  # Specify the target host from your Ansible inventory
+  gather_facts: no
+  collections:
+    - vmware.vmware_rest
+    - community.vmware
+    - community.general
+  vars_files:
+    - vars.yaml
+  tasks:
+    - name: Log in (obtain access token)
+      community.okd.openshift_auth:
+        validate_certs: no
+        username: "{{ acm_user }}"
+        password: "{{ acm_password }}"
+        host: "{{ acm_api_url }}"
+      register: openshift_auth_results
+
+    - name: Get an existing agents
+      k8s_info:
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
+        host: "{{ acm_api_url }}"
+        validate_certs: no
+        api_version: agent-install.openshift.io/v1beta1
+        kind: InfraEnv
+        namespace: "{{ namespace }}"
+      register: InfraEnv
+
+    - name: Extract isoDownloadURL from the Kubernetes object
+      set_fact:
+        iso_location: "{{ InfraEnv.resources[0].status.isoDownloadURL }}"
+
+
+    - name: Find hosts with type VM
+      set_fact:
+        vm_hosts: "{{ ocpnodes | selectattr('type', 'equalto', 'VM') | list }}"
+
+    - name: Remove the existing iso file from DS
+      include_tasks: delete-iso.yml
+      when: vm_hosts | length > 0
+
+    - name: upload the iso file to VMware DS
+      include_tasks: upload-iso.yml
+      when: vm_hosts | length > 0
+
+
+    - name: attach ISO to master VMs and power on 
+      include_tasks: attach-cdrom.yml
+      when: 
+        - item.role == 'master'
+        - item.type == 'VM'       
+      loop: "{{ ocpnodes }}"
+
+    - name: attach ISO to master BMs and power on
+      include_tasks: attach-cdrom-bm.yml
+      when:
+        - item.role == 'master'
+        - item.type == 'BM'
+      loop: "{{ ocpnodes }}"
+      
+    - name: Approve Master nodes
+      include_tasks: master_approve_hosts.yml
+
+    - name: attach ISO to worker VMs and power on
+      include_tasks: 
+        file: attach-cdrom.yml
+        apply:
+          tags:
+            - worker_only
+      when: 
+        - item.role == 'worker'
+        - item.type == 'VM'
+      loop: "{{ ocpnodes }}"
+      tags:
+        - always
+
+    - name: attach ISO to worker BMs and power on
+      include_tasks: 
+        file: attach-cdrom-bm.yml
+        apply:
+          tags:
+            - worker_only
+      when:
+        - item.role == 'worker'
+        - item.type == 'BM'
+      loop: "{{ ocpnodes }}"
+      tags:
+        - always
+
+    - name: Approve worker nodes
+      include_tasks: 
+        file: worker_approve_hosts.yml
+        apply:
+          tags:
+            - worker_only
+      tags:
+        - always

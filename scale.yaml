@@ -1,0 +1,66 @@
+- name: Scale out the cluster
+  hosts: localhost  # Specify the target host from your Ansible inventory
+  gather_facts: no
+  collections:
+    - vmware.vmware_rest
+    - community.vmware
+  vars_files:
+    - vars_scaleout.yml
+  tasks:
+    - name: Log in OCP (obtain access token)
+      community.okd.openshift_auth:
+        validate_certs: no
+        username: "{{ acm_user }}"
+        password: "{{ acm_password }}"
+        host: "{{ acm_api_url }}"
+      register: openshift_auth_results
+
+    - name: Get InfraEnv spec
+      k8s_info:
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
+        host: "{{ acm_api_url }}"
+        validate_certs: no
+        api_version: agent-install.openshift.io/v1beta1
+        kind: InfraEnv
+        namespace: "{{ namespace }}"
+      register: InfraEnv
+
+    - name: Extract isoDownloadURL from the InfraEnv Kubernetes object
+      set_fact:
+        iso_location: "{{ InfraEnv.resources[0].status.isoDownloadURL }}"
+
+    - name: Get  existing agents
+      k8s_info:
+        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
+        host: "{{ acm_api_url }}"
+        validate_certs: no
+        api_version: agent-install.openshift.io/v1beta1
+        kind: Agent
+        namespace: "{{ namespace }}"
+      register: all_agents
+
+      ##TODO## get the number of existing agents
+
+    - name: Scale out with VMs
+      block:
+        - name: Remove the existing iso file from DS
+          include_tasks: delete-iso.yml
+
+        - name: upload the iso file to DS
+          include_tasks: upload-iso.yml
+
+        - name: attach ISO to VMs
+          include_tasks: attach-cdrom.yml
+          loop: "{{ ocpnodes }}"
+
+      when: 
+        - item.type == VM
+
+
+    - name: Scale out with BMs
+      block:
+        - name: attach ISO to VMs
+          include_tasks: attach-cdrom-bm.yml
+          loop: "{{ ocpnodes }}"
+      when: 
+        - item.type == BM

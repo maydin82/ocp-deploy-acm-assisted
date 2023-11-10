@@ -1,0 +1,51 @@
+
+- name:  power off forcefully
+  community.general.redfish_command:
+    category: Systems
+    command: PowerForceOff
+    baseuri: "{{ item.redfish_baseuri }}"
+    username: "{{ redfish_username }}"
+    password: "{{ redfish_password }}"
+
+#  - name: Set iDRAC virtual media attach attribute to attached
+#    community.general.idrac_redfish_config:
+#      baseuri: "{{ item.redfish_baseuri }}"
+#      username: "{{ redfish_username }}"
+#      password: "{{ redfish_password }}"
+#      category: "Manager"
+#      command: "SetManagerAttributes"
+#      manager_attributes:
+#        VirtualMedia.1.Attached: "Attached"
+
+- name: Insert Virtual Media
+  community.general.redfish_command:
+    category: Manager
+    command: VirtualMediaInsert
+    baseuri: "{{ item.redfish_baseuri }}"
+    username: "{{ redfish_username }}"
+    password: "{{ redfish_password }}"
+    timeout: 600
+    virtual_media:
+      image_url: "{{ iso_location }}"
+      media_types:
+        - CD
+        - DVD
+
+- name: Set one-time boot device to Cd
+  community.general.redfish_command:
+    category: Systems
+    command: SetOneTimeBoot
+    bootdevice: Cd
+    baseuri: "{{ item.baseuri }}"
+    username: "{{ username }}"
+    password: "{{ password }}"
+  register: bios_onetimeboot
+
+- name:  power on 
+  community.general.redfish_command:
+    category: Systems
+    command: PowerOn
+    baseuri: "{{ item.redfish_baseuri }}"
+    username: "{{ redfish_username }}"
+    password: "{{ redfish_password }}"
+  when: bios_onetimeboot.changed

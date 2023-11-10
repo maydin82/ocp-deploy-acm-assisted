@@ -1,0 +1,23 @@
+cluster: 47m7s
+namespace: 47m7s-deploy
+vcenter_server: vcenter.company.com
+vcenter_username: "aansibleserviceaccount"
+vcenter_password: "password"
+datastore_name: WorkloadDatastore
+datacenter_name: Sample-Datacenter
+cluster_name: Cluster-1
+
+redfish_username: user1
+redfish_password: redhat
+
+acm_api_url: "https://api.testcluster.dynamic.opentlc.com:6443"
+acm_user: kubeadmin
+acm_password: samplepassword
+
+ocpnodes:
+  - hostName: w4
+    role: worker
+    type: BM
+  - hostName: w5
+    role: worker
+    type: VM
