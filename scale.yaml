@@ -29,7 +29,7 @@
       set_fact:
         iso_location: "{{ InfraEnv.resources[0].status.isoDownloadURL }}"
 
-    - name: Get  existing agents
+    - name: Get the number of  existing agents
       k8s_info:
         api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
         host: "{{ acm_api_url }}"
@@ -37,30 +37,32 @@
         api_version: agent-install.openshift.io/v1beta1
         kind: Agent
         namespace: "{{ namespace }}"
-      register: all_agents
+      register: existing_agents
 
-      ##TODO## get the number of existing agents
 
-    - name: Scale out with VMs
-      block:
-        - name: Remove the existing iso file from DS
-          include_tasks: delete-iso.yml
+    - name: Find hosts with type VM
+      set_fact:
+        vm_hosts: "{{ ocpnodes | selectattr('type', 'equalto', 'VM') | list }}"
 
-        - name: upload the iso file to DS
-          include_tasks: upload-iso.yml
 
-        - name: attach ISO to VMs
-          include_tasks: attach-cdrom.yml
-          loop: "{{ ocpnodes }}"
 
-      when: 
-        - item.type == VM
+    - name: upload the iso file to DS
+      include_tasks: upload-iso.yml
+      when: vm_hosts | length > 0
+
+    - name: attach ISO to VMs
+      include_tasks: attach-cdrom.yml
+      loop: "{{ ocpnodes }}"
+      when:
+        - item.type == 'VM'
+      loop: "{{ ocpnodes }}"
 
 
     - name: Scale out with BMs
-      block:
-        - name: attach ISO to VMs
-          include_tasks: attach-cdrom-bm.yml
-          loop: "{{ ocpnodes }}"
-      when: 
-        - item.type == BM
+      include_tasks: attach-cdrom-bm.yml
+      when:
+        - item.type == 'BM'
+      loop: "{{ ocpnodes }}"
+
+    - name: approve workers
+      include_tasks: scale-worker-approve-hosts.yml

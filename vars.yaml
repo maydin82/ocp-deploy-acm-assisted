@@ -6,7 +6,7 @@ vcenter_password: "password"
 datastore_name: WorkloadDatastore
 datacenter_name: Sample-Datacenter
 cluster_name: Cluster-1
-
+iso_name: "{{ cluster }}"
 redfish_username: user1
 redfish_password: redhat
 

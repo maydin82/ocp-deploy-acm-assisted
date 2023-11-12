@@ -3,5 +3,5 @@ kind: Namespace
 metadata:
   labels:
     cluster-name: {{ .Values.clusterName }}
-  name: {{ .Values.clusterName }}
+  name: {{ .Values.namespace }}
 
