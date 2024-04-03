@@ -1,0 +1,55 @@
+datastore_name: WorkloadDatastore
+datacenter_name: Sample-Datacenter
+redfish_username: user1
+redfish_password: redhat
+
+### OCP stuff ###
+
+
+clusterName: "{{ cluster }}"
+namespace_name: "{{ cluster }}-deploy"
+baseDomain: dynamic.opentlc.com
+#apiVIP: 10.10.10.1 ### required for integrated deployments
+imageSetName: img4.13.5-x86-64-appsub
+#ingressVIP: 10.10.10.2 required for integrated deployments
+platformType: None
+controlPlaneAgents: 3
+workerAgents: 2
+pullSecret: environments/w7t2z/pull-secret.json
+sshPublicKey: |
+  bastion public here
+
+dnsServers:
+  - 192.168.66.10
+  - 10.2.192.12
+  - 8.8.8.8
+defaultGateway: 192.168.66.1
+hosts:
+{% for node in ocpnodes_vms %}
+  - hostName: {{ node.vm_name }}
+    type: VM
+    vendor: vmware
+    role: {{ node.role }}
+    nics:
+      - nicName: ens192
+        ipAddress: {{ node.ip }}
+        ports:
+          - ens192
+        macAddresses:
+          ens192: {{ vmmacs_variables[node.vm_name] }}
+{% endfor %}
+
+  - hostName: worker1
+    type: BM
+    vendor: dell
+    role: worker
+    nics:
+      - nicName: bond0
+        ipAddress: 192.168.66.16
+        ports:
+          - ens192
+          - ens224
+        macAddresses:
+          ens192: 4545
+          ens224: 45455
+    bondType: 802.3ad  # or set it to active-backup as needed

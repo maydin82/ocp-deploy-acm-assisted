@@ -1,17 +1,7 @@
-    - name: Log in (obtain access token)
-      community.okd.openshift_auth:
-        validate_certs: no
-        username: "{{ acm_user }}"
-        password: "{{ acm_password }}"
-        host: "{{ acm_api_url }}"
-      register: openshift_auth_results
 
 
     - name: Get an existing agents
       k8s_info:
-        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
-        host: "{{ acm_api_url }}"
-        validate_certs: no
         api_version: agent-install.openshift.io/v1beta1
         kind: Agent
         namespace: "{{ namespace }}"
@@ -30,9 +20,6 @@
     - name: Update custom resource objects
       k8s:
         state: present
-        api_key: "{{ openshift_auth_results.openshift_auth.api_key }}"
-        host: "{{ acm_api_url }}"
-        validate_certs: no
         definition: |
           apiVersion: agent-install.openshift.io/v1beta1
           kind: Agent

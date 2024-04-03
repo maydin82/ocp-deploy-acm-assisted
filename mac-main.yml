@@ -1,0 +1,31 @@
+- name: Attach ISO to VMware VM
+  hosts: localhost  # Specify the target host from your Ansible inventory
+  gather_facts: no
+  collections:
+    - vmware.vmware_rest
+  tasks:
+
+    - name: Create a var file
+      ansible.builtin.lineinfile:
+        path: ./macaddress_list.yml
+        line: "vmmacs_variables:"
+        create: yes
+
+    - name: Load vars from specific file
+      include_vars:
+        file: vars-47m7s-nodes.yaml
+
+    - name: Check the Mac addresses of VMs
+      include_tasks: check_vm_mac.yaml
+      loop: "{{ ocpnodes_vms }}"
+
+    - name: Load vars from specific file
+      include_vars:
+        file: macaddress_list.yml
+
+    - name: Generate YAML file
+      template:
+        src: vars-47m7s.yaml.j2
+        dest: vars-47m7s.yaml
+
+

@@ -6,18 +6,12 @@
     - name: Look up the VM called test_vm1 in the inventory
       register: search_result
       vcenter_vm_info:
-        vcenter_hostname: "{{ vcenter_server }}"
-        vcenter_username: "{{ vcenter_username }}"
-        vcenter_password: "{{ vcenter_password }}"
         filter_names: "{{ item.hostName }}"
     - debug:
         var: search_result
 
     - name: Collect information about each VM
       vcenter_vm_info:
-        vcenter_hostname: "{{ vcenter_server }}"
-        vcenter_username: "{{ vcenter_username }}"
-        vcenter_password: "{{ vcenter_password }}"
         vm: '{{ item.vm }}'
       loop: "{{ search_result.value }}"
       register: my_vms
@@ -26,19 +20,12 @@
         var: my_vms      
     - name: power off VMs 
       vcenter_vm_power:
-        vcenter_hostname: "{{ vcenter_server }}"
-        vcenter_username: "{{ vcenter_username }}"
-        vcenter_password: "{{ vcenter_password }}"
         state: stop
         vm: '{{ item.vm }}'
       loop: "{{ search_result.value }}"
 
     - name: Attach ISO to VMs
       vcenter_vm_hardware_cdrom:
-        vcenter_hostname: "{{ vcenter_server }}"
-        vcenter_username: "{{ vcenter_username }}"
-        vcenter_password: "{{ vcenter_password }}"
-        vcenter_validate_certs: no
         vm: '{{ item.vm }}'
         type: IDE
         start_connected: true
@@ -54,9 +41,6 @@
 
     - name: power on the VM
       vcenter_vm_power:
-        vcenter_hostname: "{{ vcenter_server }}"
-        vcenter_username: "{{ vcenter_username }}"
-        vcenter_password: "{{ vcenter_password }}"
         state: start
         vm: '{{ item.vm }}'
       loop: "{{ search_result.value }}"

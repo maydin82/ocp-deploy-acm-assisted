@@ -1,0 +1,42 @@
+clusterName: {{ cluster }} 
+namespace: {{ cluster }}-deploy
+baseDomain: {{ baseDomain }}
+#apiVIP: 10.10.10.1 ### required for integrated deployments
+imageSetName: img4.13.5-x86-64-appsub
+#ingressVIP: 10.10.10.2 required for integrated deployments
+platformType: None
+controlPlaneAgents: 3
+workerAgents: 2
+pullSecret: environments/{{ cluster }}/pull-secret.json
+sshPublicKey: |
+  bastion public here
+
+dnsServers: {{ nameserver }}
+
+defaultGateway: {{ defgw }} 
+hosts:
+{% for node in ocpnodes %}
+  - hostName: {{ node.name }}
+    nics:
+      - nicName: {{ node.nicname }}
+        ipAddress: {{ node.ip }}
+        ports:
+{% for interface, mac in node.interfacemac.items() %}
+          - {{ interface  }}
+{% endfor %}
+        macAddresses:
+{% for interface, mac in node.interfacemac.items() %}
+          {{ interface }}: {{ mac }}
+{% endfor %}
+
+  - hostName: worker-2
+    nics:
+      - nicName: bond0
+        ipAddress: 192.168.66.16
+        ports:
+          - ens192
+          - ens224
+        macAddresses:
+          ens192: 00:50:56:a2:15:4f
+          ens224: 00:50:56:a2:bf:21
+    bondType: 802.3ad  # or set it to active-backup as needed
